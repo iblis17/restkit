@@ -7,6 +7,7 @@
 import mimetypes
 import os
 import re
+import six
 
 from restkit.util import to_bytestring, url_quote, url_encode
 
