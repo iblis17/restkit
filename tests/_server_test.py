@@ -13,24 +13,22 @@
 # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-#
+
 
 import base64
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import os
+import six
 import socket
 import tempfile
 import threading
 import unittest
-import urlparse
-import Cookie
 
-try:
-    from urlparse import parse_qsl, parse_qs
-except ImportError:
-    from cgi import parse_qsl, parse_qs
-import urllib
+import six.moves.urllib as urllib
+
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six.moves.urllib.parse import parse_qsl, parse_qs
+from six.moves import http_cookies
 from restkit.util import to_bytestring
 
 HOST = 'localhost'
@@ -39,16 +37,15 @@ PORT = (os.getpid() % 31000) + 1024
 class HTTPTestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
-        self.auth = 'Basic ' + base64.encodestring('test:test')[:-1]
+        self.auth = b'Basic ' + base64.encodestring(b'test:test')[:-1]
         self.count = 0
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
         
-        
     def do_GET(self):
-        self.parsed_uri = urlparse.urlparse(urllib.unquote(self.path))
+        self.parsed_uri = urllib.parse.urlparse(urllib.parse.unquote(self.path))
         self.query = {}
         for k, v in parse_qsl(self.parsed_uri[4]):
-            self.query[k] = v.decode('utf-8')
+            self.query[k] = six.u(v)
         path = self.parsed_uri[2]
 
         if path == "/":
@@ -57,7 +54,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
 
         elif path == "/unicode":
             extra_headers = [('Content-type', 'text/plain')]
-            self._respond(200, extra_headers, u"éàù@")
+            self._respond(200, extra_headers, "éàù@")
 
         elif path == "/json":
             content_type = self.headers.get('content-type', 'text/plain')
@@ -122,15 +119,15 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
             self._respond(200, extra_headers, "ok")
         
         elif path == "/cookie":
-            c = Cookie.SimpleCookie()
+            c = http_cookies.SimpleCookie()
             c["fig"] = "newton"
             c['fig']['path'] = "/"
-            for k in c.keys():
+            for k in list(c.keys()):
                 extra_headers = [('Set-Cookie', str(c[k].output(header='')))]
             self._respond(200, extra_headers, "ok")
         
         elif path == "/cookies":
-            c = Cookie.SimpleCookie()
+            c = http_cookies.SimpleCookie()
             c["fig"] = "newton"
             c['fig']['path'] = "/"
             c["sugar"] = "wafer"
@@ -144,12 +141,11 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
             self._respond(404, 
                 [('Content-type', 'text/plain')], "Not Found" )
 
-
     def do_POST(self):
-        self.parsed_uri = urlparse.urlparse(self.path)
+        self.parsed_uri = urllib.parse.urlparse(self.path)
         self.query = {}
         for k, v in parse_qsl(self.parsed_uri[4]):
-            self.query[k] = v.decode('utf-8')
+            self.query[k] = six.u(v)
         path = self.parsed_uri[2]
         extra_headers = []
         if path == "/":
@@ -331,7 +327,6 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
         self._respond(400, [('Content-type', 'text/plain'),
         ('Content-Length', str(len(body)))], body)
 
-
     def _respond(self, http_code, extra_headers, body):
         self.send_response(http_code)
         keys = []
@@ -352,13 +347,13 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
         self.wfile.close()
         self.rfile.close()
 
+
 server_thread = None
 def run_server_test():
     global server_thread
     if server_thread is not None:
         return
 
-        
     server = HTTPServer((HOST, PORT), HTTPTestHandler)
 
     server_thread = threading.Thread(target=server.serve_forever)
