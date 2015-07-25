@@ -3,8 +3,12 @@
 # This file is part of restkit released under the MIT license. 
 # See the NOTICE for more information.
 
-from StringIO import StringIO
-import urlparse
+from __future__ import print_function
+
+import six
+import six.moves.urllib.parse as urllib_parse
+
+from six import StringIO
 
 try:
     from IPython.config.loader import Config
@@ -47,7 +51,7 @@ class Response(BaseResponse):
             skip_body = False
         return BaseResponse.__str__(self, skip_body=skip_body)
     def __call__(self):
-        print self
+        print(self)
 
 
 class Request(BaseRequest):
@@ -60,11 +64,8 @@ class Request(BaseRequest):
                 stream = a
                 a.seek(0)
                 continue
-            elif isinstance(a, basestring):
-                if a.startswith('http'):
-                    url = a
-                elif a.startswith('/'):
-                    url = a
+            elif isinstance(a, six.string_types):
+                url = a if a.startswith('http') or a.startswith('/') else url
 
         self.set_url(url)
 
@@ -72,10 +73,10 @@ class Request(BaseRequest):
             self.body_file = stream
             self.content_length = stream.len
         if self.method == 'GET' and kwargs:
-            for k, v in kwargs.items():
+            for k, v in six.iteritems(kwargs):
                 self.GET[k] = v
         elif self.method == 'POST' and kwargs:
-            for k, v in kwargs.items():
+            for k, v in six.iteritems(kwargs):
                 self.GET[k] = v
         return BaseRequest.get_response(self)
 
@@ -85,7 +86,7 @@ class Request(BaseRequest):
         return BaseRequest.__str__(self, skip_body=skip_body)
 
     def __call__(self):
-        print self
+        print(self)
 
 
 class ContentTypes(object):
@@ -173,7 +174,7 @@ class ShellClient(object):
             resp = self.request(k.upper(), *args, **kwargs)
             self.shell.user_ns.update(dict(resp=resp))
 
-            print resp
+            print(resp)
             return resp
         req.func_name = k
         req.__name__ = k
@@ -208,8 +209,8 @@ class ShellClient(object):
             doc = '  >>> %s(%s)' % (k, args)
             methods += '%-65.65s # send a HTTP %s\n' % (doc, k)
         ns['methods'] = methods
-        print HELP.strip() % ns
-        print ''
+        print(HELP.strip() % ns)
+        print()
 
     def __repr__(self):
         return '<shellclient>'
