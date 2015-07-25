@@ -29,7 +29,7 @@ def test_001(u, c):
 @t.client_request("/unicode")
 def test_002(u, c):
     r = c.request(u)
-    t.eq(r.body_string(charset="utf-8"), six.u("éàù@"))
+    t.eq(r.body_string(charset="utf-8"), u"éàù@")
 
 
 @t.client_request("/éàù")
@@ -216,5 +216,3 @@ def test_024(u, c):
     t.eq(r.cookies.get('fig'), 'newton')
     t.eq(r.cookies.get('sugar'), 'wafer')
     t.eq(r.status_int, 200)
-
-
