@@ -29,7 +29,7 @@ class BoundaryItem(object):
             self.size = len(value)
         self.value = value
         if fname is not None:
-            if isinstance(fname, six.text_typsix.text_type):
+            if isinstance(fname, six.text_type):
                 fname = fname.encode("utf-8").encode("string_escape").replace('"', '\\"')
             else:
                 fname = fname.encode("string_escape").replace('"', '\\"')
