@@ -7,11 +7,13 @@ import errno
 import logging
 import os
 import time
+import six
 import socket
 import ssl
 import traceback
 import types
-import urlparse
+
+import six.moves.urllib.parse as urlparse
 
 try:
     from http_parser.http import (
@@ -24,15 +26,13 @@ except ImportError:
         pip install http-parser""")
 
 from restkit import __version__
-
-from restkit.conn import Connection
 from restkit.errors import RequestError, RequestTimeout, RedirectLimit, \
 ProxyError
 from restkit.session import get_session
-from restkit.util import parse_netloc, rewrite_location, to_bytestring
+from restkit.util import parse_netloc, rewrite_location
 from restkit.wrappers import Request, Response
 
-MAX_CLIENT_TIMEOUT=300
+MAX_CLIENT_TIMEOUT = 300
 MAX_CLIENT_CONNECTIONS = 5
 MAX_CLIENT_TRIES =3
 CLIENT_WAIT_TRIES = 0.3
@@ -169,8 +169,6 @@ class Client(object):
             if hasattr(f, "on_response"):
                 self.response_filters.append(f)
 
-
-
     def get_connection(self, request):
         """ get a connection from the pool or create new one. """
 
@@ -264,9 +262,12 @@ class Client(object):
             "Accept-Encoding: %s\r\n" % accept_encoding
         ]
 
-        lheaders.extend(["%s: %s\r\n" % (k, str(v)) for k, v in \
-                headers.items() if k.lower() not in \
-                ('user-agent', 'host', 'accept-encoding',)])
+        lheaders.extend([
+            "%s: %s\r\n" % (k, str(v))
+            for k, v in headers.items()
+            if k.lower() not in 
+            ('user-agent', 'host', 'accept-encoding',)
+        ])
         if log.isEnabledFor(logging.DEBUG):
             log.debug("Send headers: %s" % lheaders)
         return "%s\r\n" % "".join(lheaders)
@@ -321,12 +322,9 @@ class Client(object):
                         log.debug("send body (chunked: %s)" % chunked)
 
 
-                    if isinstance(request.body, types.StringTypes):
-                        if msg is not None:
-                            conn.send(msg + to_bytestring(request.body),
-                                    chunked)
-                        else:
-                            conn.send(to_bytestring(request.body), chunked)
+                    if isinstance(request.body, six.string_types):
+                        msg = msg if msg is not None else b''
+                        conn.send(msg + six.b(request.body), chunked)
                     else:
                         if msg is not None:
                             conn.send(msg)
@@ -343,15 +341,15 @@ class Client(object):
                     conn.send(msg)
 
                 return self.get_response(request, conn)
-            except socket.gaierror, e:
+            except socket.gaierror as e:
                 if conn is not None:
                     conn.release(True)
                 raise RequestError(str(e))
-            except socket.timeout, e:
+            except socket.timeout as e:
                 if conn is not None:
                     conn.release(True)
                 raise RequestTimeout(str(e))
-            except socket.error, e:
+            except socket.error as e:
                 if log.isEnabledFor(logging.DEBUG):
                     log.debug("socket error: %s" % str(e))
                 if conn is not None:
@@ -365,7 +363,7 @@ class Client(object):
                 # should raised an exception in other cases
                 request.maybe_rewind(msg=str(e))
 
-            except NoMoreData, e:
+            except NoMoreData as e:
                 if conn is not None:
                     conn.release(True)
 
@@ -381,7 +379,7 @@ class Client(object):
                 request.maybe_rewind(msg="bad status line")
 
                 if tries >= self.max_tries:
-                    raise
+                    raise Exception()
             except Exception:
                 # unkown error
                 log.debug("unhandled exception %s" %
@@ -389,7 +387,7 @@ class Client(object):
                 if conn is not None:
                     conn.release(True)
 
-                raise
+                raise Exception()
             tries += 1
             self._pool.backend_mod.sleep(self.wait_tries)
 
