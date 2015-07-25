@@ -1,35 +1,37 @@
 # -*- coding: utf-8 -
 #
-# This file is part of restkit released under the MIT license. 
+# This file is part of restkit released under the MIT license.
 # See the NOTICE for more information.
 
+import collections
+import subprocess
 import os
 import re
+import six
 import time
-import urllib
-import urlparse
 import warnings
-import Cookie
+
+import six.moves.urllib.parse as urllib_parse
 
 from restkit.errors import InvalidUrl
+from six.moves import http_cookies
+
 
 absolute_http_url_re = re.compile(r"^https?://", re.I)
+weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+monthname = [None,
+             'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-try:#python 2.6, use subprocess
-    import subprocess
-    subprocess.Popen  # trigger ImportError early
-    closefds = os.name == 'posix'
-    
-    def popen3(cmd, mode='t', bufsize=0):
-        p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-            close_fds=closefds)
-        p.wait()
-        return (p.stdin, p.stdout, p.stderr)
-except ImportError:
-    subprocess = None
-    popen3 = os.popen3
-    
+
+def popen3(cmd, mode='t', bufsize=0):
+    p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        close_fds='posix')
+    p.wait()
+    return (p.stdin, p.stdout, p.stderr)
+
+
 def locate_program(program):
     if os.path.isabs(program):
         return program
@@ -45,11 +47,7 @@ def locate_program(program):
             return filename
     return False
 
-weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-monthname = [None,
-             'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-             
+
 def http_date(timestamp=None):
     """Return the current date and time formatted for a message header."""
     if timestamp is None:
@@ -60,6 +58,7 @@ def http_date(timestamp=None):
             day, monthname[month], year,
             hh, mm, ss)
     return s
+
 
 def parse_netloc(uri):
     host = uri.netloc
@@ -78,26 +77,28 @@ def parse_netloc(uri):
             port = 443
         else:
             port = 80
-            
+
     if host and host[0] == '[' and host[-1] == ']':
         host = host[1:-1]
     return (host, port)
 
+
 def to_bytestring(s):
-    if not isinstance(s, basestring):
+    if not isinstance(s, six.string_types):
         raise TypeError("value should be a str or unicode")
 
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         return s.encode('utf-8')
     return s
-    
+
+
 def url_quote(s, charset='utf-8', safe='/:'):
     """URL encode a single string with a given encoding."""
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         s = s.encode(charset)
     elif not isinstance(s, str):
         s = str(s)
-    return urllib.quote(s, safe=safe)
+    return urllib_parse.quote(s, safe=safe)
 
 
 def url_encode(obj, charset="utf8", encode_keys=False):
@@ -107,15 +108,15 @@ def url_encode(obj, charset="utf8", encode_keys=False):
             items.append((k, v))
     else:
         items = list(items)
-        
+
     tmp = []
     for k, v in items:
-        if encode_keys: 
+        if encode_keys:
             k = encode(k, charset)
-        
+
         if not isinstance(v, (tuple, list)):
             v = [v]
-            
+
         for v1 in v:
             if v1 is None:
                 v1 = ''
@@ -123,19 +124,20 @@ def url_encode(obj, charset="utf8", encode_keys=False):
                 v1 = encode(v1(), charset)
             else:
                 v1 = encode(v1, charset)
-            tmp.append('%s=%s' % (urllib.quote(k), urllib.quote_plus(v1)))
+            tmp.append('%s=%s' % (urllib_parse.quote(k), urllib_parse.quote_plus(v1)))
     return '&'.join(tmp)
-                
+
+
 def encode(v, charset="utf8"):
-    if isinstance(v, unicode):
+    if isinstance(v, six.text_type):
         v = v.encode(charset)
     else:
         v = str(v)
     return v
-    
+
 
 def make_uri(base, *args, **kwargs):
-    """Assemble a uri based on a base, any number of path segments, 
+    """Assemble a uri based on a base, any number of path segments,
     and query string parameters.
 
     """
@@ -144,32 +146,32 @@ def make_uri(base, *args, **kwargs):
     charset = kwargs.pop("charset", "utf-8")
     safe = kwargs.pop("safe", "/:")
     encode_keys = kwargs.pop("encode_keys", True)
-    
+
     base_trailing_slash = False
     if base and base.endswith("/"):
         base_trailing_slash = True
         base = base[:-1]
     retval = [base]
-    
+
     # build the path
     _path = []
-    trailing_slash = False       
+    trailing_slash = False
     for s in args:
-        if s is not None and isinstance(s, basestring):
+        if s is not None and isinstance(s, six.string_types):
             if len(s) > 1 and s.endswith('/'):
                 trailing_slash = True
             else:
                 trailing_slash = False
             _path.append(url_quote(s.strip('/'), charset, safe))
-                   
+
     path_str =""
     if _path:
         path_str = "/".join([''] + _path)
         if trailing_slash:
-            path_str = path_str + "/" 
+            path_str = path_str + "/"
     elif base_trailing_slash:
-        path_str = path_str + "/" 
-        
+        path_str = path_str + "/"
+
     if path_str:
         retval.append(path_str)
 
@@ -182,18 +184,19 @@ def make_uri(base, *args, **kwargs):
 
 def rewrite_location(host_uri, location, prefix_path=None):
     prefix_path = prefix_path or ''
-    url = urlparse.urlparse(location)
-    host_url = urlparse.urlparse(host_uri)
+    url = urllib_parse.urlparse(location)
+    host_url = urllib_parse.urlparse(host_uri)
 
     if not absolute_http_url_re.match(location):
         # remote server doesn't follow rfc2616
         proxy_uri = '%s%s' % (host_uri, prefix_path)
-        return urlparse.urljoin(proxy_uri, location)
+        return urllib_parse.urljoin(proxy_uri, location)
     elif url.scheme == host_url.scheme and url.netloc == host_url.netloc:
-        return urlparse.urlunparse((host_url.scheme, host_url.netloc, 
+        return urllib_parse.urlunparse((host_url.scheme, host_url.netloc,
             prefix_path + url.path, url.params, url.query, url.fragment))
-    
+
     return location
+
 
 def replace_header(name, value, headers):
     idx = -1
@@ -206,6 +209,7 @@ def replace_header(name, value, headers):
     else:
         headers.append((name.title(), value))
     return headers
+
 
 def replace_headers(new_headers, headers):
     hdrs = {}
@@ -231,23 +235,23 @@ def parse_cookie(cookie, final_url):
     if cookie == '':
         return {}
 
-    if not isinstance(cookie, Cookie.BaseCookie):
+    if not isinstance(cookie, http_cookies.BaseCookie):
         try:
-            c = Cookie.SimpleCookie()
+            c = http_cookies.SimpleCookie()
             c.load(cookie)
-        except Cookie.CookieError:
+        except http_cookies.CookieError:
             # Invalid cookie
             return {}
     else:
         c = cookie
-    
+
     cookiedict = {}
 
     for key in c.keys():
         cook = c.get(key)
         cookiedict[key] = cook.value
     return cookiedict
-    
+
 
 class deprecated_property(object):
     """
@@ -287,4 +291,3 @@ class deprecated_property(object):
                 'The attribute %s is deprecated: %s' % (self.attr, self.message),
                 DeprecationWarning,
                 stacklevel=3)
-    

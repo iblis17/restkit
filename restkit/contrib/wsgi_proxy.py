@@ -3,16 +3,13 @@
 # This file is part of restkit released under the MIT license.
 # See the NOTICE for more information.
 
-import urlparse
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+import six
+import six.moves.urllib.parse as urllib_parse
 
 from restkit.client import Client
 from restkit.conn import MAX_BODY
 from restkit.util import rewrite_location
+from six.moves import StringIO
 
 ALLOWED_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE']
 
@@ -73,11 +70,10 @@ class Proxy(object):
         uri = host_uri + path_info
 
         new_headers = {}
-        for k, v in environ.items():
+        for k, v in six.iteritems(environ):
             if k.startswith('HTTP_'):
                 k = k[5:].replace('_', '-').title()
                 new_headers[k] = v
-
 
         ctype = environ.get("CONTENT_TYPE")
         if ctype and ctype is not None:
@@ -141,7 +137,7 @@ class HostProxy(Proxy):
     def __init__(self, uri, **kwargs):
         super(HostProxy, self).__init__(**kwargs)
         self.uri = uri.rstrip('/')
-        self.scheme, self.net_loc = urlparse.urlparse(self.uri)[0:2]
+        self.scheme, self.net_loc = urllib_parse.urlparse(self.uri)[0:2]
 
     def extract_uri(self, environ):
         environ['HTTP_HOST'] = self.net_loc
