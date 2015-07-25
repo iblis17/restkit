@@ -8,6 +8,7 @@ import copy
 import logging
 import mimetypes
 import os
+import six
 import types
 import uuid
 
@@ -184,11 +185,13 @@ class BodyWrapper(object):
 
     def __next__(self):
         try:
-            return next(self.body)
+            return six.next(self.body)
         except StopIteration:
             self.eof = True
             self.close()
             raise
+
+    next = __next__
 
     def read(self, n=-1):
         data = self.body.read(n)
@@ -237,7 +240,6 @@ class Response(object):
         if 'set-cookie' in self.headers:
             cookie_header = self.headers.get('set-cookie')
             self.cookies = parse_cookie(cookie_header, self.final_url)
-
 
         self._closed = False
         self._already_read = False

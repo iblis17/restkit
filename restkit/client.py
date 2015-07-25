@@ -265,7 +265,7 @@ class Client(object):
         lheaders.extend([
             "%s: %s\r\n" % (k, str(v))
             for k, v in headers.items()
-            if k.lower() not in 
+            if k.lower() not in
             ('user-agent', 'host', 'accept-encoding',)
         ])
         if log.isEnabledFor(logging.DEBUG):
