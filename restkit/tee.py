@@ -12,13 +12,10 @@ read or restart etc ... It's based on TeeInput from Gunicorn.
 """
 import copy
 import os
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 import tempfile
 
 from restkit import conn
+from six.moves import cStringIO as StringIO
 
 class TeeInput(object):
 
@@ -28,7 +25,7 @@ class TeeInput(object):
         self.buf = StringIO()
         self.eof = False
 
-        if isinstance(stream, basestring):
+        if isinstance(stream, str):
             stream = StringIO(stream)
             self.tmp = StringIO()
         else:
@@ -135,12 +132,13 @@ class TeeInput(object):
             self._close_unreader()
         return self.tmp.close()
 
-    def next(self):
+    def __next__(self):
         r = self.readline()
         if not r:
             raise StopIteration
         return r
-    __next__ = next
+
+    next = __next__
 
     def __iter__(self):
         return self
