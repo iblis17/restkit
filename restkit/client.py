@@ -26,8 +26,10 @@ except ImportError:
         pip install http-parser""")
 
 from restkit import __version__
-from restkit.errors import RequestError, RequestTimeout, RedirectLimit, \
-ProxyError
+from restkit.errors import (RequestError,
+                            RequestTimeout,
+                            RedirectLimit,
+                            ProxyError)
 from restkit.session import get_session
 from restkit.util import parse_netloc, rewrite_location
 from restkit.wrappers import Request, Response
@@ -122,9 +124,7 @@ class Client(object):
         self.response_filters = []
         self.load_filters()
 
-
         # set manager
-
         session_options = dict(
                 retry_delay=wait_tries,
                 max_size = pool_size,
@@ -197,7 +197,7 @@ class Client(object):
             request.is_proxied = True
 
             proxy_settings, proxy_auth =  _get_proxy_auth(proxy_settings)
-            addr = parse_netloc(urlparse.urlparse(proxy_settings))
+            addr = parse_netloc(urllib_parse.urlparse(proxy_settings))
 
             if is_ssl:
                 if proxy_auth:
