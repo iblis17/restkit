@@ -13,7 +13,7 @@ import ssl
 import traceback
 import types
 
-import six.moves.urllib.parse as urlparse
+import six.moves.urllib.parse as urllib_parse
 
 try:
     from http_parser.http import (
@@ -500,10 +500,10 @@ def _get_proxy_auth(proxy_settings):
     proxy_password = proxy_password or ""
 
     if not proxy_username:
-        u = urlparse.urlparse(proxy_settings)
+        u = urllib_parse.urlparse(proxy_settings)
         if u.username:
             proxy_password = u.password or proxy_password
-            proxy_settings = urlparse.urlunparse((u.scheme,
+            proxy_settings = urllib_parse.urlunparse((u.scheme,
                 u.netloc.split("@")[-1], u.path, u.params, u.query,
                 u.fragment))
 

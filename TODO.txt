@@ -1,2 +1,5 @@
 - port to python 3
+	- lib/function rename
+		- [ ] urlparse -> urllib_parse
+		- [ ] Cookie -> http_cookies
 - refactor the client to simplify the code
