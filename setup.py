@@ -4,16 +4,17 @@
 # This file is part of restkit released under the MIT license.
 # See the NOTICE for more information.
 
-from __future__ import with_statement
-from setuptools import setup, find_packages
 
 import glob
-from imp import load_source
 import os
 import sys
 
-if not hasattr(sys, 'version_info') or sys.version_info < (2, 6, 0, 'final'):
-    raise SystemExit("Restkit requires Python 2.6 or later.")
+from imp import load_source
+from setuptools import setup, find_packages
+
+
+if not hasattr(sys, 'version_info') or sys.version_info < (2, 7, 0, 'final'):
+    raise SystemExit("Restkit requires Python 2.7 or later.")
 
 extras = {}
 
@@ -24,11 +25,15 @@ CLASSIFIERS = [
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Programming Language :: Python',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.4',
     'Topic :: Internet :: WWW/HTTP',
-    'Topic :: Software Development :: Libraries']
+    'Topic :: Software Development :: Libraries',
+]
 
 
 SCRIPTS = ['scripts/restcli']
+
 
 def main():
     version = load_source("version", os.path.join("restkit",
@@ -71,6 +76,7 @@ def main():
 
 
     setup(**options)
+
 
 if __name__ == "__main__":
     main()
