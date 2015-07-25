@@ -2,4 +2,5 @@
 	- lib/function rename
 		- [ ] urlparse -> urllib_parse
 		- [ ] Cookie -> http_cookies
+		- [ ] StringIO.StringIO -> six.StringIO
 - refactor the client to simplify the code
