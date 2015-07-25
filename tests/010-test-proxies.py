@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of restkit released under the MIT license. 
+# This file is part of restkit released under the MIT license.
 # See the NOTICE for more information.
 
-import t
-from _server_test import HOST, PORT
+from __future__ import print_function
+
+import six
+
+from . import t
+from ._server_test import HOST, PORT
 from restkit.contrib import wsgi_proxy
 
 root_uri = "http://%s:%s" % (HOST, PORT)
@@ -15,7 +19,9 @@ def with_webob(func):
         req = Request.blank('/')
         req.environ['SERVER_NAME'] = '%s:%s' % (HOST, PORT)
         return func(req)
-    wrapper.func_name = func.func_name
+    if six.PY2:
+        wrapper.func_name = func.func_name
+    wrapper.__name__ = func.__name__
     return wrapper
 
 @with_webob
@@ -95,7 +101,7 @@ def test_007(req):
     resp = req.get_response(proxy)
     body = resp.body
 
-    print resp.location
+    print(resp.location)
     assert resp.location == '%s/complete_redirect' % root_uri, str(resp)
 
 @with_webob
@@ -107,6 +113,3 @@ def test_008(req):
     resp = req.get_response(proxy)
     body = resp.body
     assert resp.location == '%s/name/complete_redirect' % root_uri, str(resp)
-
-
-

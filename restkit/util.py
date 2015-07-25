@@ -5,6 +5,7 @@
 
 import collections
 import subprocess
+import logging
 import os
 import re
 import six
@@ -22,6 +23,7 @@ weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 monthname = [None,
              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+log = logging.getLogger(__name__)
 
 
 def popen3(cmd, mode='t', bufsize=0):
@@ -104,7 +106,7 @@ def url_quote(s, charset='utf-8', safe='/:'):
 def url_encode(obj, charset="utf8", encode_keys=False):
     items = []
     if isinstance(obj, dict):
-        for k, v in list(obj.items()):
+        for k, v in six.iteritems(obj):
             items.append((k, v))
     else:
         items = list(items)
