@@ -5,12 +5,12 @@
 
 import logging
 import random
-import six
 import select
 import socket
 import ssl
 import time
 
+from restkit.util import to_bytestring
 from six.moves import cStringIO as StringIO
 from socketpool import Connector
 from socketpool.util import is_connected
@@ -30,7 +30,7 @@ class Connection(Connector):
         self._s = backend_mod.Socket(socket.AF_INET, socket.SOCK_STREAM)
         self._s.connect((host, port))
         if proxy_pieces:
-            self._s.sendall(six.b(proxy_pieces))
+            self._s.sendall(to_bytestring(proxy_pieces))
             response = StringIO()
             while response.getvalue()[-4:] != '\r\n\r\n':
                 response.write(self._s.recv(1))
@@ -93,13 +93,13 @@ class Connection(Connector):
 
     def send_chunk(self, data):
         chunk = "".join(("%X\r\n" % len(data), data, "\r\n"))
-        self._s.sendall(six.b(chunk))
+        self._s.sendall(to_bytestring(chunk))
 
     def send(self, data, chunked=False):
         if chunked:
             return self.send_chunk(data)
 
-        return self._s.sendall(six.b(data))
+        return self._s.sendall(to_bytestring(data))
 
     def sendlines(self, lines, chunked=False):
         for line in list(lines):

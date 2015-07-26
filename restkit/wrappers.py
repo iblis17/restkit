@@ -67,7 +67,7 @@ class Request(object):
         path = parsed_url.path or '/'
 
         return urllib_parse.urlunparse(('','',
-            urllib_parse.quote(path),
+            urllib_parse.quote(path) if six.PY3 else path,
             parsed_url.params,
             parsed_url.query,
             parsed_url.fragment
@@ -284,8 +284,13 @@ class Response(object):
             self._already_read = True
             self.connection.release(self.should_close)
 
-    def body_string(self, charset=None, unicode_errors="strict"):
-        """ return body string, by default in bytestring """
+    def body_string(self,
+                    charset=None if six.PY2 else 'utf-8',
+                    unicode_errors="strict"):
+        '''
+        :param charset: By default, bytestring for python2 and utf-8 for python3.
+        :return: The body string
+        '''
 
         if not self.can_read():
             raise AlreadyRead()

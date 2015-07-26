@@ -39,7 +39,10 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
     def __init__(self, request, client_address, server):
         self.auth = b'Basic ' + base64.encodestring(b'test:test')[:-1]
         self.count = 0
-        BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+        if six.PY2:
+            BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+        elif six.PY3:
+            super().__init__(request, client_address, server)
         
     def do_GET(self):
         self.parsed_uri = urllib.parse.urlparse(urllib.parse.unquote(self.path))
@@ -79,6 +82,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, "ok")
             else:
                 self.error_Response()
+
         elif path == "/qint":
             test = self.query.get("test", False)
             if test and test == "1":
@@ -86,6 +90,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, "ok")
             else:
                 self.error_Response()
+
         elif path == "/auth":
             extra_headers = [('Content-type', 'text/plain')]
 
@@ -100,6 +105,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                     self._respond(200, extra_headers, "ok")
                 else:
                     self._respond(403, extra_headers, "niet!")
+
         elif path == "/redirect":
             extra_headers = [('Content-type', 'text/plain'),
                 ('Location', '/complete_redirect')]
@@ -178,6 +184,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 content_length = int(self.headers.get('Content-length', 0))
                 body = self.rfile.read(content_length)
                 self._respond(200, extra_headers, body)
+
         elif path == "/empty":
             content_type = self.headers.get('content-type', 'text/plain')
             extra_headers.append(('Content-type', content_type))
@@ -187,7 +194,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, "ok")
             else:
                 self.error_Response()
-            
+
         elif path == "/query":
             test = self.query.get("test", False)
             if test and test == "testing":
@@ -195,6 +202,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, "ok")
             else:
                 self.error_Response()
+
         elif path == "/form":
             content_type = self.headers.get('content-type', 'text/plain')
             extra_headers.append(('Content-type', content_type))
@@ -205,6 +213,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, "ok")
             else:
                 self.error_Response()
+
         elif path == "/multivalueform":
             content_type = self.headers.get('content-type', 'text/plain')
             extra_headers.append(('Content-type', content_type))
@@ -215,6 +224,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, "ok")
             else:
                 self.error_Response()
+
         elif path == "/multipart":
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
             content_length = int(self.headers.get('Content-length', 0))
@@ -225,6 +235,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, body)
             else:
                 self.error_Response()
+
         elif path == "/multipart2":
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
             content_length = int(self.headers.get('Content-length', 0))
@@ -239,6 +250,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, str(len(f)))
             else:
                 self.error_Response()
+
         elif path == "/multipart3":
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
             content_length = int(self.headers.get('Content-length', 0))
@@ -253,6 +265,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, str(len(f)))
             else:
                 self.error_Response()
+
         elif path == "/multipart4":
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
             content_length = int(self.headers.get('Content-length', 0))
@@ -267,12 +280,14 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, f)
             else:
                 self.error_Response()
+
         elif path == "/1M":
             content_type = self.headers.get('content-type', 'text/plain')
             extra_headers.append(('Content-type', content_type))
             content_length = int(self.headers.get('Content-length', 0))
             body = self.rfile.read(content_length)
             self._respond(200, extra_headers, str(len(body)))
+
         elif path == "/large":
             content_type = self.headers.get('content-type', 'text/plain')
             extra_headers.append(('Content-Type', content_type))
@@ -280,11 +295,13 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
             body = self.rfile.read(content_length)
             extra_headers.append(('Content-Length', str(len(body))))
             self._respond(200, extra_headers, body)
+
         elif path == "/list":
             content_length = int(self.headers.get('Content-length', 0))
             body = self.rfile.read(content_length)
             extra_headers.append(('Content-Length', str(len(body))))
             self._respond(200, extra_headers, body)
+
         elif path == "/chunked":
             te = (self.headers.get("transfer-encoding") == "chunked")
             if te:
@@ -293,6 +310,7 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
                 self._respond(200, extra_headers, body)
             else:
                 self.error_Response()
+
         else:
             self.error_Response('Bad path')
             
@@ -339,7 +357,10 @@ class HTTPTestHandler(BaseHTTPRequestHandler):
         #    self.send_header("Content-Length", len(body))
         self.end_headers()
         self.wfile.write(body)
-        self.wfile.close()
+        if six.PY2:
+            self.wfile.close()
+        elif six.PY3:
+            self.close_connection = True
 
     def finish(self):
         if not self.wfile.closed:

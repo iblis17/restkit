@@ -86,8 +86,11 @@ def parse_netloc(uri):
 
 
 def to_bytestring(s):
-    if not isinstance(s, six.string_types):
-        raise TypeError("value should be a str or unicode")
+    '''
+    :type s: Accept basestring in python2, and (str, bytes) in python3
+    '''
+    if not isinstance(s, six.string_types + (bytes,)):
+        raise TypeError("Type {} is not a str or unicode".format(type(s)))
 
     if isinstance(s, six.text_type):
         return s.encode('utf-8')
