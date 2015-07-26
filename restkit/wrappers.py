@@ -52,27 +52,34 @@ class Request(object):
         self._headers = MultiDict(copy.copy(value))
     headers = property(_headers__get, _headers__set, doc=_headers__get.__doc__)
 
-    def _parsed_url(self):
+    @property
+    def parsed_url(self):
+        '''
+        :return: a parsed url
+        '''
         if self.url is None:
             raise ValueError("url isn't set")
         return urllib_parse.urlparse(self.url)
-    parsed_url = property(_parsed_url, doc="parsed url")
 
-    def _path__get(self):
+    @property
+    def path(self):
         parsed_url = self.parsed_url
         path = parsed_url.path or '/'
 
-        return urllib_parse.urlunparse(('','', path, parsed_url.params,
-            parsed_url.query, parsed_url.fragment))
-    path = property(_path__get)
+        return urllib_parse.urlunparse(('','',
+            urllib_parse.quote(path),
+            parsed_url.params,
+            parsed_url.query,
+            parsed_url.fragment
+        ))
 
-    def _host__get(self):
+    @property
+    def host(self):
         h = to_bytestring(self.parsed_url.netloc)
         hdr_host = self.headers.iget("host")
         if not hdr_host:
             return h
         return hdr_host
-    host = property(_host__get)
 
     def is_chunked(self):
         te = self.headers.iget("transfer-encoding")
@@ -282,7 +289,6 @@ class Response(object):
 
         if not self.can_read():
             raise AlreadyRead()
-
 
         body = self._body.read()
         self._already_read = True

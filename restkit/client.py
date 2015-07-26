@@ -43,6 +43,7 @@ USER_AGENT = "restkit/%s" % __version__
 
 log = logging.getLogger(__name__)
 
+
 class Client(object):
     """A client handle a connection at a time. A client is threadsafe,
     but an handled shouldn't be shared between threads. All connections
@@ -63,7 +64,7 @@ class Client(object):
     """
 
     version = (1, 1)
-    response_class=Response
+    response_class = Response
 
     def __init__(self,
             follow_redirect=False,
